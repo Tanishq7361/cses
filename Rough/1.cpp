@@ -1,4 +1,4 @@
-// created: 04.07.2026
+// created: 18.08.2026
 
 #include <bits/stdc++.h>
 using namespace std;
@@ -33,13 +33,11 @@ const long long NMOD=999999883;
 #define deb(x)          cerr<<(#x)<<" is "<<(x)<<endl
 #define vin(T,a,n)      vector<T>a(n); rep(i,0,n) cin>>a[i];
 #define vvin(T,a,n,m)   vector<vector<T>>a(n,vector<T>(m)); rep(i,0,n) rep(j,0,m) cin>>a[i][j];
-inline  bool            compar(pair<ll,ll>a,pair<ll,ll>b){if(a.ff==b.ff){return a.ss<b.ss;} else{return a.ff>b.ff;}}
 inline  bool            fastprime(ll n){return n>1 && (n<=3 || (n%2 && n%3 && [&](){for(ll i=5;i*i<=n;i+=6) if(n%i==0||n%(i+2)==0) return false; return true;}()));}
 inline  ll              powerfn(ll a,ll b,ll mod=MOD){ll ans=1; a%=mod; while(b>0){ if(b&1){ans=(ans*a)%mod;} a=(a*a)%mod; b>>=1;} return ans;}
 inline  ll              modsum(ll a,ll b,ll mod=MOD){return ((a%mod + b%mod)%mod);}
 inline  ll              modmul(ll a,ll b,ll mod=MOD){return ((a%mod * b%mod)%mod);}
 inline  ll              modinv(ll a,ll mod=MOD){return powerfn(a,mod-2,mod);}
-inline  ll              msbpos(ll n){if(n==0) return -1; return (63-(__builtin_clzll(n)));}
 inline  ll              gcd(ll a,ll b){if(b==0) return a; return gcd(b,a%b);}
 inline  ll              lcm(ll a,ll b){return (a/gcd(a,b) *b);}
 inline  ll              nCr(ll n,ll r){if(r>n) return 0; if(r>n-r) r=n-r; ll res=1; for(ll i=1;i<=r;i++) res=res*(n-i+1)/i; return res;}
@@ -49,62 +47,37 @@ const   vector<ll>dy    ={0,1,0,-1,1,-1,1,-1};
 mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
 template<class T>void vout(vector<T>&n){for(auto &x:n){cout<<x<<' ';}cout<<endl;}
 template<class T>void vout(vector<vector<T>>&n){for(auto &x:n){for(auto &y:x){cout<<y<<' ';}cout<<endl;}}
-template<class T>void vout1(vector<T>&x){ll z=x.size(); rep(i,1,z){cout<<x[i]<<' ';}cout<<endl;}
 #define vpout(a) for(auto &x:a){cout<<x.first<<' '<<x.second<<endl;}
-#define o1(a) cout<<a<<endl
-
-ll dp[501][2][2][1024][3];
-// len,tight,lead,mask,rem
-vll digits;
-ll cnt(ll pos, ll tight, ll lead, ll mask, ll rem){
-    ll len=digits.size();
-    ll c=__builtin_popcount(mask);
-    ll z=(mask&8);
-    if(pos==len){
-        ll temp=0;
-        if(rem==0) temp++;
-        if(z!=0) temp++;
-        if(c==3) temp++;
-        return (temp==1);
+ll n,k;
+ll rec(vll&a,vvll&dp,ll inx, ll neg, ll opr){
+    if(inx==n){
+        return 0;
     }
-    if(dp[pos][tight][lead][mask][rem]!=-1) return dp[pos][tight][lead][mask][rem];
-    ll ans=0;
-    ll mx=tight?digits[pos]:9;
-    for(int i=0;i<=mx;i++){
-        ll ntight=tight && (i==digits[pos]);
-        ll nlead=(lead && i==0);
-        if(nlead==0){
-            ans+=cnt(pos+1,ntight,nlead,mask|(1ll<<i),(rem+i)%3);
+    if(dp[inx][neg]!=-1) return dp[inx][neg];
+    if(opr<k){
+        if(a[inx]<0){
+            return dp[inx][neg]=min(rec(a,dp,inx+1,neg+1,opr),rec(a,dp,inx+1,neg,opr+1)+neg);
         }
-        else{
-            ans+=cnt(pos+1,ntight,nlead,mask,rem);
-        }
-        ans%=MOD1;
+        return dp[inx][neg]=min(rec(a,dp,inx+1,neg+1,opr+1),rec(a,dp,inx+1,neg,opr)+neg);
     }
-    return dp[pos][tight][lead][mask][rem]=ans;
-}
-ll small(string n){
-    digits.clear();
-    ll z=n.size();
-    for(int i=0;i<z;i++){
-        digits.pb(n[i]-'0');
+    if(a[inx]<0){
+        return dp[inx][neg]=rec(a,dp,inx+1,neg+1,opr);
     }
-    memset(dp,-1,sizeof(dp));
-    return cnt(0,1,1,0,0);
+    return dp[inx][neg]=rec(a,dp,inx+1,neg,opr)+neg;
 }
-
 
 void solve(){
-    string s;
-    cin>>s;
-    cout<<small(s)-1<<endl;
+    cin>>n>>k;
+    vin(ll,a,n);
+    vvll dp(n+1,vll(n+1,-1));
+    ll ans=rec(a,dp,0,0,0);
+    cout<<ans<<endl;
 }
 
 signed main(){
     fastio;
     // cout<<fixed<<setprecision(15);
-    int tt=1; 
-    // cin>>tt;
+    int tt=1; cin>>tt;
     for(int i=1;i<=tt;i++){ // cout<<"Case #"<<i<<": ";
         solve();
     }

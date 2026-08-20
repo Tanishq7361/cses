@@ -1,4 +1,4 @@
-// created: 05.04.2026
+// created: 09.08.2026
 
 #include <bits/stdc++.h>
 using namespace std;
@@ -30,17 +30,14 @@ const long long NMOD=999999883;
 #define maxvl(v)        *max_element((v).begin(),(v).end())
 #define minvl(v)        *min_element((v).begin(),(v).end())
 #define fastio          ios_base::sync_with_stdio(false); cin.tie(NULL)
-#define flush           cout.flush()
 #define deb(x)          cerr<<(#x)<<" is "<<(x)<<endl
 #define vin(T,a,n)      vector<T>a(n); rep(i,0,n) cin>>a[i];
 #define vvin(T,a,n,m)   vector<vector<T>>a(n,vector<T>(m)); rep(i,0,n) rep(j,0,m) cin>>a[i][j];
-inline  bool            compar(pair<ll,ll>a,pair<ll,ll>b){if(a.ff==b.ff){return a.ss<b.ss;} else{return a.ff>b.ff;}}
 inline  bool            fastprime(ll n){return n>1 && (n<=3 || (n%2 && n%3 && [&](){for(ll i=5;i*i<=n;i+=6) if(n%i==0||n%(i+2)==0) return false; return true;}()));}
 inline  ll              powerfn(ll a,ll b,ll mod=MOD){ll ans=1; a%=mod; while(b>0){ if(b&1){ans=(ans*a)%mod;} a=(a*a)%mod; b>>=1;} return ans;}
 inline  ll              modsum(ll a,ll b,ll mod=MOD){return ((a%mod + b%mod)%mod);}
 inline  ll              modmul(ll a,ll b,ll mod=MOD){return ((a%mod * b%mod)%mod);}
 inline  ll              modinv(ll a,ll mod=MOD){return powerfn(a,mod-2,mod);}
-inline  ll              msbpos(ll n){if(n==0) return -1; return (63-(__builtin_clzll(n)));}
 inline  ll              gcd(ll a,ll b){if(b==0) return a; return gcd(b,a%b);}
 inline  ll              lcm(ll a,ll b){return (a/gcd(a,b) *b);}
 inline  ll              nCr(ll n,ll r){if(r>n) return 0; if(r>n-r) r=n-r; ll res=1; for(ll i=1;i<=r;i++) res=res*(n-i+1)/i; return res;}
@@ -50,64 +47,112 @@ const   vector<ll>dy    ={0,1,0,-1,1,-1,1,-1};
 mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
 template<class T>void vout(vector<T>&n){for(auto &x:n){cout<<x<<' ';}cout<<endl;}
 template<class T>void vout(vector<vector<T>>&n){for(auto &x:n){for(auto &y:x){cout<<y<<' ';}cout<<endl;}}
-#define vpout(a) for(auto x:a){cout<<x.first<<' '<<x.second<<endl;}
-#define o1(a) cout<<a<<endl
+#define vpout(a) for(auto &x:a){cout<<x.first<<' '<<x.second<<endl;}
 
-const int MODD=676767677;
+//--------------------------------Segment Tree-------------------------------//
+
+class segtree{
+private:
+    struct Node{
+        ll sum;
+        ll lazySet;
+        Node(): sum(0),
+                lazySet(LLONG_MIN){}
+    };
+    vector<Node>seg;
+    ll n;
+public:
+    segtree(ll n, vll &arr){
+        this->n=n;
+        seg.resize(4*n +5);
+        build(0,0,n-1,arr);
+    }
+
+    Node merge(const Node &L, const Node &R){
+        Node P;
+        P.sum = max(L.sum,R.sum);
+        return P;
+    }
+
+    void push(ll inx, ll low, ll high){
+        Node &node=seg[inx];
+        if(node.lazySet!=LLONG_MIN){
+            node.sum=max(node.sum,node.lazySet);
+            if(low!=high){
+                seg[2*inx +1].lazySet=max(node.lazySet, seg[2*inx +1].lazySet);
+                seg[2*inx +2].lazySet=max(node.lazySet, seg[2*inx +2].lazySet);
+            }
+            node.lazySet=LLONG_MIN;
+        }
+    }
+
+    void updateSet(ll inx, ll low, ll high, ll ql, ll qr, long long val){
+        push(inx,low,high);
+        if(qr<low || high<ql){return;}
+        if(ql<=low && high<=qr){
+            seg[inx].lazySet=max(val,seg[inx].lazySet);
+            push(inx,low,high);
+            return;
+        }
+        ll mid=(low+high) / 2;
+        updateSet(2*inx +1, low, mid, ql, qr, val);
+        updateSet(2*inx +2, mid+1, high, ql, qr, val);
+        seg[inx]=merge(seg[2*inx +1],seg[2*inx +2]);
+    }
+
+    Node querySum(ll inx, ll low, ll high, ll ql, ll qr){
+        Node P;
+        push(inx, low, high);
+        if(qr<low || high<ql){return P;}
+        if(ql<=low && high<=qr){return seg[inx];}
+        ll mid=(low+high)/2;
+        P=merge(querySum(2*inx +1, low, mid, ql, qr),querySum(2*inx +2, mid+1, high, ql, qr));
+        return P;
+    }
+
+    void build(ll inx, ll low, ll high, vll&arr){
+        if(low==high){
+            seg[inx].sum=arr[low];
+            return;
+        }
+        ll mid=(low+high)/2;
+        build(2*inx +1,low,mid,arr);
+        build(2*inx +2,mid+1,high,arr);
+        seg[inx]=merge(seg[2*inx +1],seg[2*inx +2]);
+    }
+    void updateSetPoint(ll inx, ll val){ updateSet(0,0,n-1,inx,inx,val);}
+    void updateSetRange(ll ql, ll qr, ll val){ updateSet(0,0,n-1,ql,qr,val);}
+
+};
+//---------------------------------------------------------------------------------------//
 
 void solve(){
-    ll n,m;
-    cin>>n>>m;
-    vin(ll,b,n);
-    vll pref(m+1);
-    rep(i,0,n){
-        pref[b[i]]++;
+    ll n,k;
+    cin>>n>>k;
+    vin(ll,a,n);
+    vll temp(n);
+    segtree st(n,temp);
+    while(k--){
+        ll x,y,z;
+        cin>>x>>y>>z;
+        st.updateSetRange(x-1,y-1,z);
     }
-    rep(i,1,m+1){
-        pref[i]+=pref[i-1];
+    ll ans=0;
+    for(int i=0;i<n;i++){
+        ll chck=st.querySum(0,0,n-1,i,i).sum;
+        if(chck>=a[i]){
+            ans++;
+        }
     }
-    ll ans=1;
-    rep(i,0,n){
-        if(b[i]==0) continue;
-        ll w=1e9;
-        if(i>0){
-            w=b[i-1];
-        }
-        if(i<n-1){
-            w=min(w,b[i+1]);
-        }
-        // cout<<i<<' '<<w<<' ';
-        if(w<b[i]-1){
-            ans*=pref[b[i]-1]-pref[b[i]-2];
-        }
-        else if(w==b[i]-1){
-            ans*=pref[b[i]-1];
-        }
-        else{
-            ans*=0;
-        }
-        ans%=MODD;
-        // cout<<ans<<endl;
-    }
-    // 0-> 1
-    // 1-> 2 x 2 x 2
-    // 2-> 5
-    // 3-> 1 x 6
-    // 4-> 8
-    // 9 5
-    // 1 0 1 3 4 3 2 1 0
-    // 1920 = 2 x 3 x 5 x 8 x 8
     cout<<ans<<endl;
 }
-
 
 signed main(){
     fastio;
     // cout<<fixed<<setprecision(15);
-    int tt=1;
+    int tt=1; 
     cin>>tt;
-    for(int i=1;i<=tt;i++){
-        // cout<<"Case #"<<i<<": ";
+    for(int i=1;i<=tt;i++){ // cout<<"Case #"<<i<<": ";
         solve();
     }
     return 0;

@@ -1,4 +1,4 @@
-// created: 30.06.2026
+// created: 18.08.2026
 
 #include <bits/stdc++.h>
 using namespace std;
@@ -33,13 +33,11 @@ const long long NMOD=999999883;
 #define deb(x)          cerr<<(#x)<<" is "<<(x)<<endl
 #define vin(T,a,n)      vector<T>a(n); rep(i,0,n) cin>>a[i];
 #define vvin(T,a,n,m)   vector<vector<T>>a(n,vector<T>(m)); rep(i,0,n) rep(j,0,m) cin>>a[i][j];
-inline  bool            compar(pair<ll,ll>a,pair<ll,ll>b){if(a.ff==b.ff){return a.ss<b.ss;} else{return a.ff>b.ff;}}
 inline  bool            fastprime(ll n){return n>1 && (n<=3 || (n%2 && n%3 && [&](){for(ll i=5;i*i<=n;i+=6) if(n%i==0||n%(i+2)==0) return false; return true;}()));}
 inline  ll              powerfn(ll a,ll b,ll mod=MOD){ll ans=1; a%=mod; while(b>0){ if(b&1){ans=(ans*a)%mod;} a=(a*a)%mod; b>>=1;} return ans;}
 inline  ll              modsum(ll a,ll b,ll mod=MOD){return ((a%mod + b%mod)%mod);}
 inline  ll              modmul(ll a,ll b,ll mod=MOD){return ((a%mod * b%mod)%mod);}
 inline  ll              modinv(ll a,ll mod=MOD){return powerfn(a,mod-2,mod);}
-inline  ll              msbpos(ll n){if(n==0) return -1; return (63-(__builtin_clzll(n)));}
 inline  ll              gcd(ll a,ll b){if(b==0) return a; return gcd(b,a%b);}
 inline  ll              lcm(ll a,ll b){return (a/gcd(a,b) *b);}
 inline  ll              nCr(ll n,ll r){if(r>n) return 0; if(r>n-r) r=n-r; ll res=1; for(ll i=1;i<=r;i++) res=res*(n-i+1)/i; return res;}
@@ -49,73 +47,32 @@ const   vector<ll>dy    ={0,1,0,-1,1,-1,1,-1};
 mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
 template<class T>void vout(vector<T>&n){for(auto &x:n){cout<<x<<' ';}cout<<endl;}
 template<class T>void vout(vector<vector<T>>&n){for(auto &x:n){for(auto &y:x){cout<<y<<' ';}cout<<endl;}}
-template<class T>void vout1(vector<T>&x){ll z=x.size(); rep(i,1,z){cout<<x[i]<<' ';}cout<<endl;}
 #define vpout(a) for(auto &x:a){cout<<x.first<<' '<<x.second<<endl;}
-#define o1(a) cout<<a<<endl
-
-
-bool isPerfectSquare(ll n){
-    if(n<=1){
-        return true;
+ll n,k;
+ll rec(vll&a,vvll&dp,ll inx, ll opr, ll neg){
+    if(inx==n){
+        return 0;
     }
-    ll low=1,high=n;
-    while(low<=high){
-        ll mid=(low+high)/2;
-        ll sq=mid*mid;
-        if(sq==n){
-            return true;
+    if(dp[inx][opr]!=-1) return dp[inx][opr];
+    if(opr<k){
+        if(a[inx]<0){
+            return dp[inx][opr]=min(rec(a,dp,inx+1,opr,neg+1),rec(a,dp,inx+1,opr+1,neg)+neg);
         }
-        else if(sq<n){
-            low=mid+1;
-        }
-        else{
-            high=mid-1;
-        }
+        return dp[inx][opr]=min(rec(a,dp,inx+1,opr+1,neg+1),rec(a,dp,inx+1,opr,neg)+neg);
     }
-    return false;
+    if(a[inx]<0){
+        return dp[inx][opr]=rec(a,dp,inx+1,opr,neg+1);
+    }
+    return dp[inx][opr]=rec(a,dp,inx+1,opr,neg)+neg;
 }
 
-
 void solve(){
-    ll n;
-    cin>>n;
+    cin>>n>>k;
+    k=min(k,n);
     vin(ll,a,n);
-    vvll adj(n+1);
-    rep(i,1,n){
-        ll x,y;
-        cin>>x>>y;
-        adj[x].pb(y);
-        adj[y].pb(x);
-    }
-    vll subsz(n+1,1);
-    vll depth(n+1);
-    depth[1]=1;
-    function<void(ll,ll)>dfs=[&](ll node, ll par){
-        for(auto &x:adj[node]){
-            if(x==par) continue;
-            depth[x]=depth[node]+1;
-            dfs(x,node);
-            subsz[node]+=subsz[x];
-        }
-    };
-    dfs(1,-1);
-    vll ans(n+1);
-    function<void(ll,ll)>dfs2=[&](ll node, ll par){
-        ll up=n-subsz[node];
-        ll sum1=0,sum2=0,sum3=0;
-        for(auto &x:adj[node]){
-            if(x==par) continue;
-            sum3+=sum2*subsz[x];
-            sum2+=sum1*subsz[x];
-            sum1+=subsz[x];
-            dfs2(x,node);
-        }
-        if(!isPerfectSquare(a[node-1])) return;
-        ans[node]+=(n-subsz[node] +1)*sum2 + sum3 +  (n-subsz[node])*(subsz[node]-1);  
-    };
-    dfs2(1,-1);
-    ll final=accumulate(all(ans),0ll);
-    cout<<final<<endl;
+    vvll dp(n+1,vll(k+1,-1));
+    ll ans=rec(a,dp,0,0,0);
+    cout<<ans<<endl;
 }
 
 signed main(){
